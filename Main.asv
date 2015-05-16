@@ -22,7 +22,7 @@ while(1)
     end
     [t,y] = EncoderURZ(A,Tb,vector);
     figure(1)
-    plot(t,y,'o')
+    stem(t,y)
     hold on
     plot(t,y,'r')
     if length(vector) > showb
@@ -32,7 +32,7 @@ while(1)
     end
     set(gca,'ylim',[-0.1*A 1.1*A])
     grid on
-    set(gca,'xtick',Tb:Tb:t(length(t)))
+    set(gca,'xtick',0:Tb:t(length(t)))
     set(gca,'ytick',[0 A])
     ylabel('Amplitud (Volt)')
     xlabel('Tiempo (Segundos)')

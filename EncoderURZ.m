@@ -1,5 +1,5 @@
-function [t,y] = EncoderURZ(A,Tb,bit_vector)
-    delta = 1/(8*(1/Tb));
+function [t,y] = EncoderURZ(A,Tb,bit_vector,mpb)
+    delta = 1/(mpb*(1/Tb));
     t = delta:delta:Tb-delta;
     y = 0; 
     for i=1:length(bit_vector);

@@ -1,0 +1,27 @@
+
+%% Limpieza
+clc 
+clear all 
+close all 
+%----------
+
+%% Parametros del filtro
+Fd = 24000;                 % Frecuencia de muestreo. 
+FN = Fd/2;                  % Frecuencia de Nyquist o la máxima frecuencia a muestrear. 
+
+F1 = 2400;
+F2 = 9600;
+
+Wp = [F1 F2];           % Banda de paso.   
+
+%Normalizados estas bandas.
+WpN = Wp/FN;
+
+n = 948;
+
+
+%% Filtro
+
+Filt = fir1(n,WpN);
+
+fvtool(Filt)

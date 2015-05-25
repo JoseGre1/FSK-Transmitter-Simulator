@@ -22,7 +22,7 @@ function varargout = Channel(varargin)
 
 % Edit the above text to modify the response to help Channel
 
-% Last Modified by GUIDE v2.5 17-May-2015 10:33:50
+% Last Modified by GUIDE v2.5 18-May-2015 22:08:24
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -60,13 +60,13 @@ guidata(hObject, handles);
 
 % UIWAIT makes Channel wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
-clear all;
-global Rb Tb delta state
+global Rb Tb delta state mpb Interface1
 Rb = 2400;
 Tb = 1/Rb; %%[s]
-delta = 1/(8*(1/Tb));
 state = 0;
-
+mpb = 8; % MUESTRAS POR BIT
+delta = 1/(mpb*(1/Tb));
+Interface1 = gcf;
 
 % --- Outputs from this function are returned to the command line.
 function varargout = Channel_OutputFcn(hObject, eventdata, handles) 
@@ -95,6 +95,8 @@ else
     state = 0;
     set(handles.Start_But,'Enable','on');
     set(handles.Stop_But,'String','Stop');
+    set(handles.Stop_But,'Enable','off');
+    set(handles.Gen_But,'Enable','on');
 end
 
 
@@ -106,25 +108,30 @@ function Start_But_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global Rb Tb delta
-global A s_bits t_bits
-global vector y t1 deltaf f1 s_FSK S_FSK f
-global stop_val
+global A s_bits n_bits
+global vector y e_vector t1 deltaf f1 s_FSK S_FSK f
+global stop_val mpb state
 %--------------------------Reset
 axes(handles.axes_source)
 cla;
 set(handles.Start_But,'Enable','off')
+set(handles.Stop_But,'Enable','on');
 set(handles.position_slider,'Enable','off');
 set(handles.position_slider,'Value',0);
+n_bits = str2num(get(handles.red_bits,'String'));
 %--------------------------Get values from the GUI
 s_bits = str2num(get(handles.show_bits,'String')); %show bits
 A = str2num(get(handles.Amp,'String')); %Amplitud
+%--------------------------Codificación de canal
+e_vector = vector;
+if get(handles.codif_check,'Value')
+    e_vector = Ch_Encoder(vector,n_bits);
+end
 %--------------------------Codificación de línea
 lim = Tb/delta + 1;      
-[t1,y] = EncoderURZ(A,Tb,vector);
-%--------------------------Codificación de canal
-y_e = y;
+[t1,y] = EncoderURZ(A,Tb,e_vector,mpb);
 %--------------------------Modulador FSK
-y_inv = double(~y_e);
+y_inv = double(~y);
 f1 = 2*Rb;
 deltaf = Rb;
 i = 1;
@@ -142,15 +149,26 @@ while i<=length(y)
 end
 s_FSK = s_FSK(2:length(s_FSK));
 %--------------------------Espectro de la señal modulada FSK
-NFFT = length(t1);
-f = -(-1/(2*delta):1/(delta*NFFT):(1/(2*delta)-1/(delta*NFFT)));
-S_FSK = abs(fft(s_FSK,NFFT)/length(t1));
-S_FSK = fftshift(S_FSK);
+Eb = A^2*Tb;
+%----------EN FFT
+% NFFT = length(t2);
+% Nsamp = (length(t2)*delta);
+% f = -(-1/(2*delta):1/(delta*NFFT):(1/(2*delta)-1/(delta*NFFT)));
+% S_FSK = abs(fft(s_FSK,NFFT)/length(t2));
+% S_FSK = fftshift(S_FSK);
+% %embarajuste
+% S_FSK = S_FSK*(2*Eb)*Nsamp/(t_bits/100);
+%----------EN PSD
+[S_FSK, f] = pwelch(s_FSK,[],[],[],'twosided',mpb);
+f = (f-mpb/2)*Rb; f = -f; f=f(end:-1:1);
+S_FSK = fftshift(S_FSK)*0.7/max(S_FSK);
+S_FSK = circshift(S_FSK,-1);
+plot(f,S_FSK) %NORMALIZADA QUITAR EL 2*Eb para sacar la grafica normal
+xlim([-(f1+deltaf+Rb) f1+deltaf+Rb])
 %--------------------------Visualizacion
-
 axes(handles.axes_SFSK)
 plot(f,S_FSK,'Color',[1 1 0])
-ylabel('Magnitude[V^2/Hz]')
+ylabel('Power[V^2/Hz]')
 xlabel('Frequency[Hz]')
 grid on
 set(gca,'Color',[0 0 0]);
@@ -183,7 +201,7 @@ set(gca,'Color',[0 0 0]);
 set(gca,'Xcolor',[1 1 1]);
 set(gca,'Ycolor',[1 1 1]);
 
-while(bit_cur<=length(vector)) 
+while(bit_cur<=length(e_vector)) 
     axes(handles.axes_source)
     if bit_cur > s_bits
         xlim([Tb*(bit_cur-s_bits) bit_cur*Tb]);
@@ -199,13 +217,18 @@ while(bit_cur<=length(vector))
     if stop_val
         break;
     end
-    position = (bit_cur-1)/(length(vector)-1);
+    position = (bit_cur-1)/(length(e_vector)-1);
     set(handles.position_slider,'Value',position);
     velocity = get(handles.speed_slider,'Value');
     velocity = 0.25 - 0.24*velocity;
     bit_cur = bit_cur+1;
     pause(velocity)   
 end
+state = 1;
+set(handles.Stop_But,'String','Restart');
+set(handles.position_slider,'Enable','on');
+set(handles.Gen_But,'Enable','off');
+
 
 
 
@@ -214,7 +237,20 @@ function Next_But_Callback(hObject, eventdata, handles)
 % hObject    handle to Next_But (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+% global Rb Tb delta
+% global A s_bits n_bits
+% global vector y e_vector t1 deltaf f1 s_FSK S_FSK f
+% global stop_val mpb state
+% assignin('base','Rb',Rb);
+% assignin('base','Tb',Tb);
+% assignin('base','delta',delta);
+% assignin('base','A',A);
+% assignin('base','s_bits',s_bits);
+% assignin('base','n_bits',n_bits);
+% assignin('base','vector',vector);
+MyUI = gcf;
+set(gcf,'Visible','off')
+Channel;
 
 
 function nbits_Callback(hObject, eventdata, handles)
@@ -352,6 +388,48 @@ function Gen_But_Callback(hObject, eventdata, handles)
 global t_bits vector
 t_bits = str2num(get(handles.nbits,'String')); %transmitted bits
 set(handles.Start_But,'Enable','on')
-set(handles.Stop_But,'Enable','on')
 %--------------------------Fuente de informacion
 vector = round(random('Uniform',0,1,1,t_bits));
+
+
+% --- Executes on button press in codif_check.
+function codif_check_Callback(hObject, eventdata, handles)
+% hObject    handle to codif_check (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of codif_check
+if get(handles.codif_check,'Value')
+    set(handles.red_label,'Visible','on');
+    set(handles.red_bits,'Visible','on');
+else
+    set(handles.red_label,'Visible','off');
+    set(handles.red_bits,'Visible','off');
+end
+function red_bits_Callback(hObject, eventdata, handles)
+% hObject    handle to red_bits (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of red_bits as text
+%        str2double(get(hObject,'String')) returns contents of red_bits as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function red_bits_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to red_bits (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in Clear_But.
+function Clear_But_Callback(hObject, eventdata, handles)
+% hObject    handle to Clear_But (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)

@@ -6,22 +6,23 @@ close all;
 %% FUENTE DE INFORMACION
 Rb = 2400;
 Tb = 1/Rb; %%[s]
-mpb = 8; %Muestras por bit
+mpb = 8;
 delta = 1/(mpb*(1/Tb));
-nbits = 10;
+nbits = 100;
 vector = round(random('Uniform',0,1,1,nbits));
 %% CODIFICACION DE LINEA
 A=1;
 lim = Tb/delta + 1;
 showb = 8;
-[t1,y] = EncoderURZ(A,Tb,vector,mpb);
+[t1,y] = EncoderUNRZ(A,Tb,vector,mpb);
 t_bits = nbits; %Transmitted bits
 %% TRANSMISOR
-y_inv = double(~y);
+y_inv = A*double(~y);
 f1 = 2*Rb;
-deltaf = Rb;i = 1;
+deltaf = Rb;
+i = 1;
 iter = 1;
-s_FSK = 0;
+s_FSK = [];
 while i<=length(y)
     t2 = (iter-1)*Tb+delta:delta:iter*Tb;
     phi1 = sqrt(2/Tb)*cos(2*pi*f1*t2);
@@ -32,16 +33,28 @@ while i<=length(y)
     i = i + Tb/delta;
     iter = iter+1;
 end
-s_FSK = s_FSK(2:length(s_FSK));
-t2 = linspace(delta,(iter-1)*Tb,length(s_FSK));
+t2 = linspace(delta,t_bits*Tb,length(s_FSK));
+Eb = A^2*Tb;
 %% <PRUEBA DE FRECUENCIA>
 figure(3)
 NFFT = length(t2);
-f = -1/(2*delta):1/(delta*NFFT):(1/(2*delta)-1/(delta*NFFT));
+Nsamp = (length(t2)*delta);
+f = -(-1/(2*delta):1/(delta*NFFT):(1/(2*delta)-1/(delta*NFFT)));
 S_FSK = abs(fft(s_FSK,NFFT)/length(t2));
 S_FSK = fftshift(S_FSK);
-plot(-f,S_FSK)
-%% </PRUEBA DE FRECUENCIA>
+%embarajuste
+%S_FSK*(2*Eb)*Nsamp/(t_bits/100);
+%/embarajuste
+plot(f,S_FSK,'g')
+%% PSD
+figure(4)
+[Psd_FSK, f] = pwelch(s_FSK,[],[],[],'twosided',mpb);
+f = (f-mpb/2)*Rb; f = -f; f=f(end:-1:1);
+Psd_FSK = fftshift(Psd_FSK)*0.7*(2*Eb)/max(Psd_FSK);
+Psd_FSK = circshift(Psd_FSK,-1);
+plot(f,Psd_FSK/(2*Eb)) %NORMALIZADA QUITAR EL 2*Eb para sacar la grafica normal
+xlim([-(f1+deltaf+Rb) f1+deltaf+Rb])
+%%
 figure(2)
 plot(t2,s_FSK)
 set(gca,'xtick',0:Tb:t2(length(t2)))
@@ -74,7 +87,10 @@ while(bit_cur<=length(vector))
     bit_cur = bit_cur+1;
     pause(0.0001)
 end
+%% CANAL
+
 %% RECEPTOR
+s_rec = s_FSK;
 iter = 1;
 i= 1;
 x1 = [];
@@ -84,8 +100,8 @@ while iter<=t_bits
     t2 = (iter-1)*Tb+delta:delta:iter*Tb;
     phi1 = sqrt(2/Tb)*cos(2*pi*f1*t2);
     phi2 = sqrt(2/Tb)*cos(2*pi*(f1+deltaf)*t2);
-    dem1 = s_FSK(round(i):round(iter*Tb/delta)).*phi1; 
-    dem2 = s_FSK(round(i):round(iter*Tb/delta)).*phi2;
+    dem1 = s_rec(round(i):round(iter*Tb/delta)).*phi1; 
+    dem2 = s_rec(round(i):round(iter*Tb/delta)).*phi2;
     facop1 = sum(dem1)*delta;
     facop2 = sum(dem2)*delta;
     x1 = [x1 facop1];
@@ -99,5 +115,6 @@ while iter<=t_bits
     i = i + Tb/delta;
     iter = iter+1;
 end
-y_rec
-vector
+xor = xor(y_rec,vector);
+errors = find(xor==1,length(xor));
+errors = length(errors)

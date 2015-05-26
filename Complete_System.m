@@ -21,7 +21,8 @@ if (check_encoder)
 end
 t_bits = length(e_vector); %Bits transmitidos
 %% CODIFICACION DE LINEA
-A = sqrt(Rb); %Energia unitaria
+Eb = 1; %Energia unitaria
+A = sqrt(Eb); 
 lim = Tb/deltab + 1;
 showb = 8; %Bits a mostrar en ventana
 [t1,y] = EncoderUNRZ(A,Tb,e_vector,mpb); %Encoder UNRZ

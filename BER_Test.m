@@ -57,8 +57,8 @@ for ciclos = 1:1
             t2 = linspace(delta,Tb,length(s_FSK));
             %% CANAL
             % Tb es el tiempo de bit y Tsample es el tiempo de muestreo. 
-            Tsample = deltab;
-            SNR = EbNo - 10*log10((0.5*Tb)/Tsample);
+            Tsample = delta;
+            SNR = EbNo + 10*log10((2/(Tb*1/delta)));
             %Tomamos la señal modulada y le agregamos ruido. Con un SNR hallado anteriormente.
             s_awgn = awgn(s_FSK,SNR,'measured');
             %Señal filtrada
@@ -110,11 +110,13 @@ for ciclos = 1:1
         BER_vector = [BER_vector BER];
         base = whos;
         memory = [base(1:length(base)).bytes];
+        clear base;
         memory = sum(memory);
         memories = [memories memory];
         EbNos = [EbNos EbNo];
         cod_can = [cod_can check_encoder];
         times = [times toc];
+        save('Results_BER')
     end
     check_encoder = 1; 
 end

@@ -1,3 +1,4 @@
+
 function varargout = Channel(varargin)
 % CHANNEL MATLAB code for Channel.fig
 %      CHANNEL, by itself, creates a new CHANNEL or raises the existing
@@ -22,7 +23,7 @@ function varargout = Channel(varargin)
 
 % Edit the above text to modify the response to help Channel
 
-% Last Modified by GUIDE v2.5 26-May-2015 08:22:29
+% Last Modified by GUIDE v2.5 26-May-2015 14:18:21
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -85,20 +86,7 @@ function Stop_But_Callback(hObject, eventdata, handles)
 % hObject    handle to Stop_But (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global stop_val state
-if state==0
-    stop_val = get(hObject,'Value');
-    state = 1;
-    set(handles.Stop_But,'String','Restart');
-    set(handles.position_slider,'Enable','on');
-else
-    stop_val = ~get(hObject,'Value');
-    state = 0;
-    set(handles.Start_But,'Enable','on');
-    set(handles.Stop_But,'String','Stop');
-    set(handles.Stop_But,'Enable','off');
-    set(handles.Gen_But,'Enable','on');
-end
+
 
 
 
@@ -108,174 +96,29 @@ function Start_But_Callback(hObject, eventdata, handles)
 % hObject    handle to Start_But (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global Rb Tb deltab
-global A s_bits n_bits i_bits t_bits Eb
-global vector y e_vector t1 deltaf f1 f2 s_FSK S_FSK f delta
-global stop_val mpb state
-%--------------------------Reset
-axes(handles.axes_source)
-cla;
-set(handles.Start_But,'Enable','off')
-set(handles.Stop_But,'Enable','on');
-set(handles.position_slider,'Enable','off');
-set(handles.position_slider,'Value',0);
-n_bits = str2num(get(handles.red_bits,'String'));
-%--------------------------Get values from the GUI
-s_bits = str2num(get(handles.show_bits,'String')); %show bits
-%--------------------------Codificación de canal
-e_vector = vector;
-if get(handles.codif_check,'Value')
-    e_vector = Ch_Encoder(vector,n_bits);
-end
-t_bits = length(e_vector);
-%--------------------------Codificación de línea
-Eb = 1;
-A = sqrt(Eb);  
-[t1,y] = EncoderUNRZ(A,Tb,e_vector,mpb);
-%--------------------------Modulador FSK
-deltaf = Rb; %Separación entre frec 1 y frec 2
-f1 = 2*Rb; %Frecuencia 1
-f2 = f1+deltaf; %Frecuencia 2
-fQ = 5/3; %Sobremuestreo
-delta = 1/(2*fQ*(f1+deltaf)); %nueva delta para nueva freq de muestreo
-y_inv = double(~y);
-i = 1;
-iter = 1;
-s_FSK = [];
-fase1 = 0.1896; %valor de fase obtenido de phasez() para f1=4800
-fase2 = -fase1; %valor de fase obtenido de phasez() para f2=7200
-cor_tif1 = - fase1/(2*pi*f1); %Ajuste de fase --> Tiempo
-cor_tif2 = - fase2/(2*pi*f2); %Ajuste de fase --> Tiempo
-cor_mu1 = round(cor_tif1/delta); %Ajuste de Tiempo --> Muestras
-cor_mu2 = round(cor_tif2/delta); %Ajuste de Tiempo --> Muestras
-while i<=length(y)
-    t2 = (iter-1)*Tb+delta:delta:iter*Tb;
-    phi1 = sqrt(2/Tb)*cos(2*pi*f1*t2);
-    circshift(phi1,cor_mu1); %Corrimiento de muestras
-    phi2 = sqrt(2/Tb)*cos(2*pi*f2*t2);
-    circshift(phi2,cor_mu2); %Corrimiento de muestras
-    sum1 = y(i).*phi1;
-    sum2 = y_inv(i).*phi2;
-    s_FSK = [s_FSK sum1+sum2];
-    i = i + Tb/deltab;
-    iter = iter+1;
-end
-t2 = linspace(delta,t_bits*Tb,length(s_FSK));
-%--------------------------Espectro de la señal modulada FSK
-%----------EN FFT
-NFFT = length(t2);
-Nsamp = (length(t2)*delta);
-f = -(-1/(2*delta):1/(delta*NFFT):(1/(2*delta)-1/(delta*NFFT)));
-S_FSK = abs(fft(s_FSK,NFFT)/length(t2));
-S_FSK = fftshift(S_FSK);
-S_FSK = S_FSK*Nsamp;
-%----------EN PSD
-% [S_FSK, f] = pwelch(s_FSK,[],[],[],'twosided',mpb);
-% f = (f-mpb/2)*Rb; f = -f; f=f(end:-1:1);
-% S_FSK = fftshift(S_FSK)*0.7/max(S_FSK);
-% S_FSK = circshift(S_FSK,-1);
-plot(f,S_FSK) %NORMALIZADA QUITAR EL 2*Eb para sacar la grafica normal
-xlim([-(f1+deltaf+Rb) f1+deltaf+Rb])
-%--------------------------Visualizacion
-axes(handles.axes_SFSK)
-plot(f,S_FSK,'Color',[1 1 0])
-ylabel('Power[V^2/Hz]')
-xlabel('Frequency[Hz]')
-grid on
-set(gca,'Color',[0 0 0]);
-set(gca,'Xcolor',[1 1 1]);
-set(gca,'Ycolor',[1 1 1]);
-
-bit_cur = 1;
-axes(handles.axes_source)
-plot(t1,y,'o')
-hold on
-plot(t1,y,'r')
-hold off
-set(gca,'ylim',[-0.1*A 1.1*A])
-set(gca,'xtick',Tb:Tb:t1(length(t1)))
-set(gca,'ytick',[0 A])
-ylabel('Amplitude[V]')
-xlabel('Time[s]')
-grid on
-set(gca,'Color',[0 0 0]);
-set(gca,'Xcolor',[1 1 1]);
-set(gca,'Ycolor',[1 1 1]);
-
-axes(handles.axes_sFSK)
-plot(t2,s_FSK,'Color',[0 1 0])
-set(gca,'xtick',0:Tb:t2(length(t2)))
-ylabel('Amplitude[V]')
-xlabel('Time[s]')
-grid on
-set(gca,'Color',[0 0 0]);
-set(gca,'Xcolor',[1 1 1]);
-set(gca,'Ycolor',[1 1 1]);
-
-while(bit_cur<=length(e_vector)) 
-    axes(handles.axes_source)
-    if bit_cur > s_bits
-        xlim([Tb*(bit_cur-s_bits) bit_cur*Tb]);
-    else
-        xlim([0 s_bits*Tb]);
-    end
-    axes(handles.axes_sFSK)
-    if bit_cur > s_bits
-        xlim([Tb*(bit_cur-s_bits) bit_cur*Tb]);
-    else
-        xlim([delta s_bits*Tb]);
-    end
-    if stop_val
-        break;
-    end
-    position = (bit_cur-1)/(length(e_vector)-1);
-    set(handles.position_slider,'Value',position);
-    velocity = get(handles.speed_slider,'Value');
-    velocity = 0.25 - 0.24*velocity;
-    bit_cur = bit_cur+1;
-    pause(velocity)   
-end
-state = 1;
-set(handles.Stop_But,'String','Restart');
-set(handles.position_slider,'Enable','on');
-set(handles.Gen_But,'Enable','off');
-
-
-
 
 % --- Executes on button press in Next_But.
 function Next_But_Callback(hObject, eventdata, handles)
 % hObject    handle to Next_But (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% global Rb Tb delta
-% global A s_bits n_bits
-% global vector y e_vector t1 deltaf f1 s_FSK S_FSK f
-% global stop_val mpb state
-% assignin('base','Rb',Rb);
-% assignin('base','Tb',Tb);
-% assignin('base','delta',delta);
-% assignin('base','A',A);
-% assignin('base','s_bits',s_bits);
-% assignin('base','n_bits',n_bits);
-% assignin('base','vector',vector);
 MyUI = gcf;
 set(gcf,'Visible','off')
 Channel;
 
 
-function nbits_Callback(hObject, eventdata, handles)
-% hObject    handle to nbits (see GCBO)
+function ebno_Callback(hObject, eventdata, handles)
+% hObject    handle to ebno (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of nbits as text
-%        str2double(get(hObject,'String')) returns contents of nbits as a double
+% Hints: get(hObject,'String') returns contents of ebno as text
+%        str2double(get(hObject,'String')) returns contents of ebno as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function nbits_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to nbits (see GCBO)
+function ebno_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to ebno (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -339,13 +182,6 @@ function position_slider_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
-global Tb vector s_bits
-bit_now = get(handles.position_slider,'Value');    
-bit_now = (length(vector)-1)*bit_now + 1;
-axes(handles.axes_source)
-xlim([Tb*(bit_now-s_bits) bit_now*Tb]);
-axes(handles.axes_sFSK)
-xlim([Tb*(bit_now-s_bits) bit_now*Tb]);
 
 
 % --- Executes during object creation, after setting all properties.
@@ -391,13 +227,13 @@ function Stop_But_ButtonDownFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 
-% --- Executes on button press in Gen_But.
-function Gen_But_Callback(hObject, eventdata, handles)
-% hObject    handle to Gen_But (see GCBO)
+% --- Executes on button press in Pass_But.
+function Pass_But_Callback(hObject, eventdata, handles)
+% hObject    handle to Pass_But (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global i_bits vector
-i_bits = str2num(get(handles.nbits,'String')); %transmitted bits
+i_bits = str2num(get(handles.ebno,'String')); %transmitted bits
 set(handles.Start_But,'Enable','on')
 %--------------------------Fuente de informacion
 vector = round(random('Uniform',0,1,1,i_bits));
@@ -451,3 +287,69 @@ function pushbutton8_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton8 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in Back_But.
+function Back_But_Callback(hObject, eventdata, handles)
+% hObject    handle to Back_But (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+MyUI = gcf;
+set(gcf,'Visible','off')
+Generation;
+
+
+% --- Executes on key press with focus on Pass_But and none of its controls.
+function Pass_But_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to Pass_But (see GCBO)
+% eventdata  structure with the following fields (see MATLAB.UI.CONTROL.UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on selection change in popupmenu3.
+function popupmenu3_Callback(hObject, eventdata, handles)
+% hObject    handle to popupmenu3 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu3 contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popupmenu3
+
+
+% --- Executes during object creation, after setting all properties.
+function popupmenu3_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popupmenu3 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in popupmenu2.
+function popupmenu2_Callback(hObject, eventdata, handles)
+% hObject    handle to popupmenu2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu2 contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popupmenu2
+
+
+% --- Executes during object creation, after setting all properties.
+function popupmenu2_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popupmenu2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

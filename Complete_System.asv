@@ -21,6 +21,7 @@ if (check_encoder)
 end
 t_bits = length(e_vector); %Bits transmitidos
 %% CODIFICACION DE LINEA
+Eb = 1;
 A = sqrt(Rb); %Energia unitaria
 lim = Tb/deltab + 1;
 showb = 8; %Bits a mostrar en ventana
@@ -104,9 +105,8 @@ end
 t2 = linspace(delta,t_bits*Tb,length(s_FSK));
 %% CONTEO DE ERRORES
 comp = xor(y_decod,vector);
-errors = find(comp==1,length(comp));
-errors = length(errors);
-BER = errors/t_bits;
+errors = sum(comp);
+BER = errors/i_bits;
 %% GRAFICAS
 figure(6)
 plot(t2,s_FSK)

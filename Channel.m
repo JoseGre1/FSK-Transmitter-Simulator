@@ -22,7 +22,7 @@ function varargout = Channel(varargin)
 
 % Edit the above text to modify the response to help Channel
 
-% Last Modified by GUIDE v2.5 18-May-2015 22:08:24
+% Last Modified by GUIDE v2.5 26-May-2015 08:22:29
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -60,13 +60,14 @@ guidata(hObject, handles);
 
 % UIWAIT makes Channel wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
-global Rb Tb delta state mpb Interface1
-Rb = 2400;
-Tb = 1/Rb; %%[s]
+global Rb Tb deltab state mpb
+Rb = 2400; %[bps]
+Tb = 1/Rb; %[s]
+mpb = 8;   %Muestras por bit
 state = 0;
-mpb = 8; % MUESTRAS POR BIT
-delta = 1/(mpb*(1/Tb));
-Interface1 = gcf;
+deltab = 1/(mpb*(1/Tb));
+warning ('off','all');
+
 
 % --- Outputs from this function are returned to the command line.
 function varargout = Channel_OutputFcn(hObject, eventdata, handles) 
@@ -107,9 +108,9 @@ function Start_But_Callback(hObject, eventdata, handles)
 % hObject    handle to Start_But (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global Rb Tb delta
-global A s_bits n_bits
-global vector y e_vector t1 deltaf f1 s_FSK S_FSK f
+global Rb Tb deltab
+global A s_bits n_bits i_bits t_bits Eb
+global vector y e_vector t1 deltaf f1 f2 s_FSK S_FSK f delta
 global stop_val mpb state
 %--------------------------Reset
 axes(handles.axes_source)
@@ -121,48 +122,58 @@ set(handles.position_slider,'Value',0);
 n_bits = str2num(get(handles.red_bits,'String'));
 %--------------------------Get values from the GUI
 s_bits = str2num(get(handles.show_bits,'String')); %show bits
-A = str2num(get(handles.Amp,'String')); %Amplitud
 %--------------------------Codificación de canal
 e_vector = vector;
 if get(handles.codif_check,'Value')
     e_vector = Ch_Encoder(vector,n_bits);
 end
+t_bits = length(e_vector);
 %--------------------------Codificación de línea
-lim = Tb/delta + 1;      
-[t1,y] = EncoderURZ(A,Tb,e_vector,mpb);
+Eb = 1;
+A = sqrt(Eb);  
+[t1,y] = EncoderUNRZ(A,Tb,e_vector,mpb);
 %--------------------------Modulador FSK
+deltaf = Rb; %Separación entre frec 1 y frec 2
+f1 = 2*Rb; %Frecuencia 1
+f2 = f1+deltaf; %Frecuencia 2
+fQ = 5/3; %Sobremuestreo
+delta = 1/(2*fQ*(f1+deltaf)); %nueva delta para nueva freq de muestreo
 y_inv = double(~y);
-f1 = 2*Rb;
-deltaf = Rb;
 i = 1;
 iter = 1;
-s_FSK = 0;
+s_FSK = [];
+fase1 = 0.1896; %valor de fase obtenido de phasez() para f1=4800
+fase2 = -fase1; %valor de fase obtenido de phasez() para f2=7200
+cor_tif1 = - fase1/(2*pi*f1); %Ajuste de fase --> Tiempo
+cor_tif2 = - fase2/(2*pi*f2); %Ajuste de fase --> Tiempo
+cor_mu1 = round(cor_tif1/delta); %Ajuste de Tiempo --> Muestras
+cor_mu2 = round(cor_tif2/delta); %Ajuste de Tiempo --> Muestras
 while i<=length(y)
     t2 = (iter-1)*Tb+delta:delta:iter*Tb;
     phi1 = sqrt(2/Tb)*cos(2*pi*f1*t2);
-    phi2 = sqrt(2/Tb)*cos(2*pi*(f1+deltaf)*t2);
+    circshift(phi1,cor_mu1); %Corrimiento de muestras
+    phi2 = sqrt(2/Tb)*cos(2*pi*f2*t2);
+    circshift(phi2,cor_mu2); %Corrimiento de muestras
     sum1 = y(i).*phi1;
     sum2 = y_inv(i).*phi2;
     s_FSK = [s_FSK sum1+sum2];
-    i = i + Tb/delta;
+    i = i + Tb/deltab;
     iter = iter+1;
 end
-s_FSK = s_FSK(2:length(s_FSK));
+t2 = linspace(delta,t_bits*Tb,length(s_FSK));
 %--------------------------Espectro de la señal modulada FSK
-Eb = A^2*Tb;
 %----------EN FFT
-% NFFT = length(t2);
-% Nsamp = (length(t2)*delta);
-% f = -(-1/(2*delta):1/(delta*NFFT):(1/(2*delta)-1/(delta*NFFT)));
-% S_FSK = abs(fft(s_FSK,NFFT)/length(t2));
-% S_FSK = fftshift(S_FSK);
-% %embarajuste
-% S_FSK = S_FSK*(2*Eb)*Nsamp/(t_bits/100);
+NFFT = length(t2);
+Nsamp = (length(t2)*delta);
+f = -(-1/(2*delta):1/(delta*NFFT):(1/(2*delta)-1/(delta*NFFT)));
+S_FSK = abs(fft(s_FSK,NFFT)/length(t2));
+S_FSK = fftshift(S_FSK);
+S_FSK = S_FSK*Nsamp;
 %----------EN PSD
-[S_FSK, f] = pwelch(s_FSK,[],[],[],'twosided',mpb);
-f = (f-mpb/2)*Rb; f = -f; f=f(end:-1:1);
-S_FSK = fftshift(S_FSK)*0.7/max(S_FSK);
-S_FSK = circshift(S_FSK,-1);
+% [S_FSK, f] = pwelch(s_FSK,[],[],[],'twosided',mpb);
+% f = (f-mpb/2)*Rb; f = -f; f=f(end:-1:1);
+% S_FSK = fftshift(S_FSK)*0.7/max(S_FSK);
+% S_FSK = circshift(S_FSK,-1);
 plot(f,S_FSK) %NORMALIZADA QUITAR EL 2*Eb para sacar la grafica normal
 xlim([-(f1+deltaf+Rb) f1+deltaf+Rb])
 %--------------------------Visualizacion
@@ -192,8 +203,8 @@ set(gca,'Xcolor',[1 1 1]);
 set(gca,'Ycolor',[1 1 1]);
 
 axes(handles.axes_sFSK)
-plot(t1,s_FSK,'Color',[0 1 0])
-set(gca,'xtick',0:Tb:t1(length(t1)))
+plot(t2,s_FSK,'Color',[0 1 0])
+set(gca,'xtick',0:Tb:t2(length(t2)))
 ylabel('Amplitude[V]')
 xlabel('Time[s]')
 grid on
@@ -385,11 +396,11 @@ function Gen_But_Callback(hObject, eventdata, handles)
 % hObject    handle to Gen_But (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global t_bits vector
-t_bits = str2num(get(handles.nbits,'String')); %transmitted bits
+global i_bits vector
+i_bits = str2num(get(handles.nbits,'String')); %transmitted bits
 set(handles.Start_But,'Enable','on')
 %--------------------------Fuente de informacion
-vector = round(random('Uniform',0,1,1,t_bits));
+vector = round(random('Uniform',0,1,1,i_bits));
 
 
 % --- Executes on button press in codif_check.
@@ -431,5 +442,12 @@ end
 % --- Executes on button press in Clear_But.
 function Clear_But_Callback(hObject, eventdata, handles)
 % hObject    handle to Clear_But (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in pushbutton8.
+function pushbutton8_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton8 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)

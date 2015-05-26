@@ -5,9 +5,13 @@ mpb = 8;                 %Muestras por bit
 deltab = 1/(mpb*(1/Tb)); %1/fs para los bits
 check_encoder = 0; %0:Sin codificacion de CH, 1: Con codificación de CH    
 tic;
+times = [];
+memories = [];
+EbNos = [];
+cod_can = [];
 for ciclos = 1:1
     BER_vector = [];
-    for EbNo=10:10
+    for EbNo=1:15
         i_bits = round(1/(0.5*erfc(sqrt(0.5*10^(EbNo*0.1))))); %Bits de informacion
         err_found = 0;
         for bit_now = 1:i_bits
@@ -98,15 +102,19 @@ for ciclos = 1:1
             if (y_decod~=cur_bit(1))
                 err_found = err_found + 1; 
             end
+            EbNo
+            porc = bit_now*100/i_bits
         end
         %% CONTEO DE ERRORES
         BER = err_found/i_bits;
         BER_vector = [BER_vector BER];
+        base = whos;
+        memory = [base(1:length(base)).bytes];
+        memory = sum(memory);
+        memories = [memories memory];
+        EbNos = [EbNos EbNo];
+        cod_can = [cod_can check_encoder];
+        times = [times toc];
     end
     check_encoder = 1; 
 end
-
-base = whos;
-memory = [base(1:length(base)).bytes];
-memory = sum(memory)
-toc

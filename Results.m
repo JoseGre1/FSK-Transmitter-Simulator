@@ -60,11 +60,11 @@ guidata(hObject, handles);
 
 % UIWAIT makes Results wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
-global errors t_bits
+global errors i_bits
 errors = evalin('base','errors');
-t_bits = evalin('base','t_bits');
+i_bits = evalin('base','i_bits');
 set(handles.e_tag,'String',num2str(errors));
-set(handles.t_tag,'String',num2str(t_bits));
+set(handles.t_tag,'String',num2str(i_bits));
 warning ('off','all');
 
 
@@ -237,13 +237,7 @@ function codif_check_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of codif_check
-if get(handles.codif_check,'Value')
-    set(handles.red_label,'Visible','on');
-    set(handles.red_bits,'Visible','on');
-else
-    set(handles.red_label,'Visible','off');
-    set(handles.red_bits,'Visible','off');
-end
+
 
 function red_bits_Callback(hObject, eventdata, handles)
 % hObject    handle to red_bits (see GCBO)

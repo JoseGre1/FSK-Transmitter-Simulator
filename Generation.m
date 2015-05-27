@@ -262,14 +262,16 @@ function Next_But_Callback(hObject, eventdata, handles)
 % hObject    handle to Next_But (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global s_FSK t2 delta s_bits vector f1 f2 t_bits check_encoder mpb
-MyUI = gcf; 
+global s_FSK t2 delta s_bits vector f1 f2 t_bits check_encoder mpb n_bits
+global i_bits
 check_encoder = get(handles.codif_check,'Value');
 assignin('base','s_FSK',s_FSK);
 assignin('base','check_encoder',check_encoder);
 assignin('base','delta',delta);
 assignin('base','t2',t2);
 assignin('base','s_bits',s_bits);
+assignin('base','n_bits',n_bits);
+assignin('base','i_bits',i_bits);
 assignin('base','vector',vector);
 assignin('base','f1',f1);
 assignin('base','f2',f2);

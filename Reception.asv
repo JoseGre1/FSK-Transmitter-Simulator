@@ -22,7 +22,7 @@ function varargout = Reception(varargin)
 
 % Edit the above text to modify the response to help Reception
 
-% Last Modified by GUIDE v2.5 26-May-2015 22:58:11
+% Last Modified by GUIDE v2.5 27-May-2015 03:20:16
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -62,10 +62,11 @@ guidata(hObject, handles);
 % uiwait(handles.figure1);
 global Rb Tb deltab state mpb check_encoder vector
 global t2 delta f1 f2
-global s_bits
+global s_bits i_bits
 delta = evalin('base','delta');
 t2 = evalin('base','t2');
 s_bits = evalin('base','s_bits');
+i_bits = evalin('base','i_bits');
 f1 = evalin('base','f1');
 f2 = evalin('base','f2');
 check_encoder = evalin('base','check_encoder');
@@ -195,11 +196,14 @@ function position_slider_Callback(hObject, eventdata, handles)
 global Tb vector s_bits
 bit_now = get(handles.position_slider,'Value');    
 bit_now = (length(vector)-1)*bit_now + 1;
-if (get(handles.pop_spectrum,'Value') &&
-axes(handles.axes_rec)
-xlim([Tb*(bit_now-s_bits) bit_now*Tb]);
-axes(handles.axes_orig)
-xlim([Tb*(bit_now-s_bits) bit_now*Tb]);
+if (get(handles.pop_spectrum,'Value')) == 1
+    axes(handles.axes_rec)
+    xlim([Tb*(bit_now-s_bits) bit_now*Tb]);
+end
+if (get(handles.pop_spectrum2,'Value')) == 1
+    axes(handles.axes_orig)
+    xlim([Tb*(bit_now-s_bits) bit_now*Tb]);
+end
 
 
 % --- Executes during object creation, after setting all properties.
@@ -335,7 +339,6 @@ switch(get(handles.pop_spectrum,'Value'))
         set(gca,'xtick',Tb:Tb:t1(length(t1)))
         set(gca,'ytick',[0 A])
     case 2
-        set(handles.position_slider,'Enable','off');
         plot(fb,RX_f,'Color',[1 1 0])
         ylabel('Magnitude')
         xlabel('Frequency[Hz]')
@@ -401,8 +404,13 @@ function menu_const_Callback(hObject, eventdata, handles)
 global x1 x2
 figure(2)
 scatter(x1,x2)
+hold on
+plot(linspace(-1,2,length(x1)),linspace(-1,2,length(x1)),'--','Color',[0 1 0])
+hold off
 xlabel('Phi 1(t)')
 ylabel('Phi 2(t)')
+xlim([-1 2])
+ylim([-1 2])
 title('Constellation')
 grid on
 set(gca,'Color',[0 0 0]);
@@ -445,7 +453,6 @@ switch(get(handles.pop_spectrum2,'Value'))
         set(gca,'ytick',[0 A])
         set(handles.position_slider,'Enable','on');
     case 2
-        set(handles.position_slider,'Enable','off');
         plot(fb,Y,'Color',[1 1 0])
         ylabel('Magnitude')
         xlabel('Frequency[Hz]')
@@ -483,7 +490,7 @@ function Rec_But_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global t_bits t2 delta Tb f1 f2 x1 x2 s_rec check_encoder mpb vector
-global y_decod s_bits errors RxVec TxVec deltab RX_f
+global y_decod s_bits errors RxVec TxVec deltab RX_f n_bits fb TX_f
 %RECEPTOR
 iter = 1;
 i= 1;
@@ -528,19 +535,25 @@ comp = xor(y_decod,vector);
 errors = sum(comp);
 %----Decod
 Eb = 1; %Energia unitaria
-A = sqrt(Eb);  
+A = sqrt(Eb);
 [t1,TxVec] = EncoderUNRZ(A,Tb,vector,mpb);
 [t1,RxVec] = EncoderUNRZ(A,Tb,y_decod,mpb);
-%--------------------------Espectro de la entrada del sistema
+%--------------------------Espectro de la salida del sistema
 %----------EN FFT
 NFFT = length(t1);
 Nsamp = (length(t1)*deltab);
 fb = -(-1/(2*deltab):1/(deltab*NFFT):(1/(2*deltab)-1/(deltab*NFFT)));
-RX_f = abs(fft(RxVec,NFFT)/length(t2));
+RX_f = abs(fft(RxVec,NFFT)/length(t1));
 RX_f = fftshift(RX_f);
 RX_f = RX_f*Nsamp;
+%--------------------------Espectro de la entrada del sistema
+%----------EN FFT
+TX_f = abs(fft(TxVec,NFFT)/length(t1));
+TX_f = fftshift(TX_f);
+TX_f = TX_f*Nsamp;
 %----------GRAFICAS
 axes(handles.axes_rec)
+switch (get(handles.pop_spectrum,'Value')
 plot(t1,RxVec,'o')
 hold on
 plot(t1,RxVec,'r')
@@ -576,3 +589,10 @@ set(handles.position_slider,'Enable','on');
 set(handles.pop_spectrum,'Enable','on');
 set(handles.pop_spectrum2,'Enable','on');
 set(handles.Res_But,'Enable','on');
+
+
+% --------------------------------------------------------------------
+function menu_BER2_Callback(hObject, eventdata, handles)
+% hObject    handle to menu_BER2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)

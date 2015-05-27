@@ -12,7 +12,7 @@ cod_can = [];
 warning ('off','all');
 for ciclos = 1:1
     BER_vector = [];
-    for EbNo=0:10
+    for EbNo=11:15
         if EbNo<=5
             i_bits = 10000; %Bits de informacion
         elseif EbNo>=6
@@ -124,7 +124,7 @@ for ciclos = 1:1
         EbNos = [EbNos EbNo];
         cod_can = [cod_can check_encoder];
         times = [times toc];
-        save('Results_BER (1-12 sin)3')
+        save('Results_BER (11-15 sin)3')
     end
     check_encoder = 1; 
 end

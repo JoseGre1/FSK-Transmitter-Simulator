@@ -62,10 +62,11 @@ guidata(hObject, handles);
 % uiwait(handles.figure1);
 global Rb Tb deltab state mpb check_encoder vector
 global t2 delta f1 f2
-global s_bits
+global s_bits i_bits
 delta = evalin('base','delta');
 t2 = evalin('base','t2');
 s_bits = evalin('base','s_bits');
+i_bits = evalin('base','i_bits');
 f1 = evalin('base','f1');
 f2 = evalin('base','f2');
 check_encoder = evalin('base','check_encoder');
@@ -403,8 +404,13 @@ function menu_const_Callback(hObject, eventdata, handles)
 global x1 x2
 figure(2)
 scatter(x1,x2)
+hold on
+plot(linspace(-1,2,length(x1)),linspace(-1,2,length(x1)),'--','Color',[0 1 0])
+hold off
 xlabel('Phi 1(t)')
 ylabel('Phi 2(t)')
+xlim([-1 2])
+ylim([-1 2])
 title('Constellation')
 grid on
 set(gca,'Color',[0 0 0]);
@@ -484,7 +490,7 @@ function Rec_But_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global t_bits t2 delta Tb f1 f2 x1 x2 s_rec check_encoder mpb vector
-global y_decod s_bits errors RxVec TxVec deltab RX_f
+global y_decod s_bits errors RxVec TxVec deltab RX_f n_bits fb TX_f
 %RECEPTOR
 iter = 1;
 i= 1;
@@ -529,30 +535,40 @@ comp = xor(y_decod,vector);
 errors = sum(comp);
 %----Decod
 Eb = 1; %Energia unitaria
-A = sqrt(Eb);  
+A = sqrt(Eb);
 [t1,TxVec] = EncoderUNRZ(A,Tb,vector,mpb);
 [t1,RxVec] = EncoderUNRZ(A,Tb,y_decod,mpb);
-%--------------------------Espectro de la entrada del sistema
+%--------------------------Espectro de la salida del sistema
 %----------EN FFT
 NFFT = length(t1);
 Nsamp = (length(t1)*deltab);
 fb = -(-1/(2*deltab):1/(deltab*NFFT):(1/(2*deltab)-1/(deltab*NFFT)));
-RX_f = abs(fft(RxVec,NFFT)/length(t2));
+RX_f = abs(fft(RxVec,NFFT)/length(t1));
 RX_f = fftshift(RX_f);
 RX_f = RX_f*Nsamp;
+%--------------------------Espectro de la entrada del sistema
+%----------EN FFT
+TX_f = abs(fft(TxVec,NFFT)/length(t1));
+TX_f = fftshift(TX_f);
+TX_f = TX_f*Nsamp;
 %----------GRAFICAS
 axes(handles.axes_rec)
-plot(t1,RxVec,'o')
-hold on
-plot(t1,RxVec,'r')
-hold off
-set(gca,'ylim',[-0.1*A 1.1*A])
-set(gca,'xtick',Tb:Tb:t1(length(t1)))
-set(gca,'ytick',[0 A])
-ylabel('Amplitude[V]')
-xlabel('Time[s]')
+switch (get(handles.pop_spectrum,'Value'))
+    case 1
+        plot(t1,RxVec,'o')
+        hold on
+        plot(t1,RxVec,'r')
+        hold off
+        set(gca,'ylim',[-0.1*A 1.1*A])
+        set(gca,'xtick',Tb:Tb:t1(length(t1)))
+        set(gca,'ytick',[0 A])
+        ylabel('Amplitude[V]')
+        xlabel('Time[s]')
+        xlim([0 s_bits*Tb]);
+    case 2
+        
+end;
 grid on
-xlim([0 s_bits*Tb]);
 set(gca,'Color',[0 0 0]);
 set(gca,'Xcolor',[1 1 1]);
 set(gca,'Ycolor',[1 1 1]);

@@ -24,7 +24,8 @@ for ciclos = 1:1
                 n_bits = 1;
             end
             %% CODIFICACION DE LINEA
-            A = sqrt(Rb); %Energia unitaria
+            Eb = 1; %Energia unitaria
+            A = sqrt(Eb); 
             [t1,y] = EncoderUNRZ(A,Tb,cur_bit,mpb); %Encoder UNRZ
             %% MODULACION FSK
             deltaf = Rb; %Separación entre frec 1 y frec 2
@@ -101,6 +102,10 @@ for ciclos = 1:1
             end       
             if (y_decod~=cur_bit(1))
                 err_found = err_found + 1; 
+                if (err_found)>99
+                    disp('Se encontraron mas de 100 errores');
+                    break;
+                end
             end
             EbNo
             porc = bit_now*100/i_bits

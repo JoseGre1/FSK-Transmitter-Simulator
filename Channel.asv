@@ -296,7 +296,7 @@ switch(get(handles.menu_axes2,'Value'))
         plot(f,S_REC)
         xlabel('Frequency [Hz]')
         ylabel('Magnitude')
-        xlim([-(f1+Rb) f2+Rb])
+        xlim([-(f1+deltaf+Rb) f1+deltaf+Rb])
 end
 set(gca,'Color',[0 0 0]);
 set(gca,'Xcolor',[1 1 1]);

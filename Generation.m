@@ -267,7 +267,7 @@ MyUI = gcf;
 check_encoder = get(handles.codif_check,'Value');
 assignin('base','s_FSK',s_FSK);
 assignin('base','check_encoder',check_encoder);
-assignin('base','delta',delta);de
+assignin('base','delta',delta);
 assignin('base','t2',t2);
 assignin('base','s_bits',s_bits);
 assignin('base','vector',vector);

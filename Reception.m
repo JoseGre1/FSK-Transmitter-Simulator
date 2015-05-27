@@ -22,7 +22,7 @@ function varargout = Reception(varargin)
 
 % Edit the above text to modify the response to help Reception
 
-% Last Modified by GUIDE v2.5 26-May-2015 22:58:11
+% Last Modified by GUIDE v2.5 27-May-2015 03:20:16
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -61,7 +61,7 @@ guidata(hObject, handles);
 % UIWAIT makes Reception wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 global Rb Tb deltab state mpb check_encoder vector
-global t_bits t2 delta f1 f2
+global t2 delta f1 f2
 global s_bits
 delta = evalin('base','delta');
 t2 = evalin('base','t2');
@@ -195,10 +195,14 @@ function position_slider_Callback(hObject, eventdata, handles)
 global Tb vector s_bits
 bit_now = get(handles.position_slider,'Value');    
 bit_now = (length(vector)-1)*bit_now + 1;
-axes(handles.axes_rec)
-xlim([Tb*(bit_now-s_bits) bit_now*Tb]);
-axes(handles.axes_orig)
-xlim([Tb*(bit_now-s_bits) bit_now*Tb]);
+if (get(handles.pop_spectrum,'Value')) == 1
+    axes(handles.axes_rec)
+    xlim([Tb*(bit_now-s_bits) bit_now*Tb]);
+end
+if (get(handles.pop_spectrum2,'Value')) == 1
+    axes(handles.axes_orig)
+    xlim([Tb*(bit_now-s_bits) bit_now*Tb]);
+end
 
 
 % --- Executes during object creation, after setting all properties.
@@ -315,21 +319,35 @@ function pop_spectrum_Callback(hObject, eventdata, handles)
 
 % Hints: contents = cellstr(get(hObject,'String')) returns pop_spectrum contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from pop_spectrum
-global f S_FSK fb Y f1 Rb deltaf
+global t1 fb RxVec s_bits Tb RX_f
+Eb = 1;
+A = sqrt(Eb);
 axes(handles.axes_rec)
 switch(get(handles.pop_spectrum,'Value'))
     case 1
-        plot(f,S_FSK,'Color',[1 1 0])
-        xlim([-(f1+deltaf+Rb) f1+deltaf+Rb])
+        set(handles.position_slider,'Enable','on');
+        plot(t1,RxVec,'o')
+        hold on
+        plot(t1,RxVec,'r')
+        hold off
+        ylabel('Amplitude[V]')
+        xlabel('Time[s]')
+        grid on
+        xlim([0 s_bits*Tb]);
+        set(gca,'ylim',[-0.1*A 1.1*A])
+        set(gca,'xtick',Tb:Tb:t1(length(t1)))
+        set(gca,'ytick',[0 A])
     case 2
-        plot(fb,Y,'Color',[1 1 0])
+        plot(fb,RX_f,'Color',[1 1 0])
+        ylabel('Magnitude')
+        xlabel('Frequency[Hz]')
 end
-ylabel('Magnitude')
-xlabel('Frequency[Hz]')
 grid on
 set(gca,'Color',[0 0 0]);
 set(gca,'Xcolor',[1 1 1]);
 set(gca,'Ycolor',[1 1 1]);
+
+
 
 % --- Executes during object creation, after setting all properties.
 function pop_spectrum_CreateFcn(hObject, eventdata, handles)
@@ -365,6 +383,16 @@ function eye_menu_Callback(hObject, eventdata, handles)
 % hObject    handle to eye_menu (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+% Gráfica del diagrama de ojo. 
+global x1 x2
+eyediagram(x1-x2,2,3,0,'r');
+xlabel('Time [s]')
+ylabel('Amplitude [V]')
+grid on
+set(gca,'Color',[0 0 0]);
+set(gca,'Xcolor',[1 1 1]);
+set(gca,'Ycolor',[1 1 1]);
+set(gcf,'Color',[0 0 0]);
 
 
 % --------------------------------------------------------------------
@@ -372,6 +400,17 @@ function menu_const_Callback(hObject, eventdata, handles)
 % hObject    handle to menu_const (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+global x1 x2
+figure(2)
+scatter(x1,x2)
+xlabel('Phi 1(t)')
+ylabel('Phi 2(t)')
+title('Constellation')
+grid on
+set(gca,'Color',[0 0 0]);
+set(gca,'Xcolor',[1 1 1]);
+set(gca,'Ycolor',[1 1 1]);
+set(gcf,'Color',[0 0 0]);
 
 
 % --------------------------------------------------------------------
@@ -389,7 +428,33 @@ function pop_spectrum2_Callback(hObject, eventdata, handles)
 
 % Hints: contents = cellstr(get(hObject,'String')) returns pop_spectrum2 contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from pop_spectrum2
-
+global t1 fb Y TxVec s_bits Tb
+Eb = 1;
+A = sqrt(Eb);
+axes(handles.axes_orig)
+switch(get(handles.pop_spectrum2,'Value'))
+    case 1
+        plot(t1,TxVec,'o')
+        hold on
+        plot(t1,TxVec,'r')
+        hold off
+        ylabel('Amplitude[V]')
+        xlabel('Time[s]')
+        grid on
+        xlim([0 s_bits*Tb]);
+        set(gca,'ylim',[-0.1*A 1.1*A])
+        set(gca,'xtick',Tb:Tb:t1(length(t1)))
+        set(gca,'ytick',[0 A])
+        set(handles.position_slider,'Enable','on');
+    case 2
+        plot(fb,Y,'Color',[1 1 0])
+        ylabel('Magnitude')
+        xlabel('Frequency[Hz]')
+end
+grid on
+set(gca,'Color',[0 0 0]);
+set(gca,'Xcolor',[1 1 1]);
+set(gca,'Ycolor',[1 1 1]);
 
 % --- Executes during object creation, after setting all properties.
 function pop_spectrum2_CreateFcn(hObject, eventdata, handles)
@@ -419,7 +484,7 @@ function Rec_But_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global t_bits t2 delta Tb f1 f2 x1 x2 s_rec check_encoder mpb vector
-global y_decod s_bits errors
+global y_decod s_bits errors RxVec TxVec deltab RX_f
 %RECEPTOR
 iter = 1;
 i= 1;
@@ -467,6 +532,15 @@ Eb = 1; %Energia unitaria
 A = sqrt(Eb);  
 [t1,TxVec] = EncoderUNRZ(A,Tb,vector,mpb);
 [t1,RxVec] = EncoderUNRZ(A,Tb,y_decod,mpb);
+%--------------------------Espectro de la entrada del sistema
+%----------EN FFT
+NFFT = length(t1);
+Nsamp = (length(t1)*deltab);
+fb = -(-1/(2*deltab):1/(deltab*NFFT):(1/(2*deltab)-1/(deltab*NFFT)));
+RX_f = abs(fft(RxVec,NFFT)/length(t2));
+RX_f = fftshift(RX_f);
+RX_f = RX_f*Nsamp;
+%----------GRAFICAS
 axes(handles.axes_rec)
 plot(t1,RxVec,'o')
 hold on
@@ -503,3 +577,10 @@ set(handles.position_slider,'Enable','on');
 set(handles.pop_spectrum,'Enable','on');
 set(handles.pop_spectrum2,'Enable','on');
 set(handles.Res_But,'Enable','on');
+
+
+% --------------------------------------------------------------------
+function menu_BER2_Callback(hObject, eventdata, handles)
+% hObject    handle to menu_BER2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)

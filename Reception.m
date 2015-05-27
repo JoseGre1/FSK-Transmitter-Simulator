@@ -430,6 +430,10 @@ load('Results_BER (0-10 sin)3.mat')
 BER_vector2 = BER_vector;
 load('Results_BER (11-12 sin)3.mat')
 BER_vector = [BER_vector2 BER_vector];
+BER_vector2 = BER_vector;
+load('Results_BER (13-15 sin)3.mat')
+BER_vector2(14:16) = BER_vector;
+BER_vector = BER_vector2;
 EbNos = 0:15;
 prob_ideal = (0.5)*erfc((1/sqrt(2))*sqrt(10.^(EbNos*0.1)));
 figH4 = figure(4);

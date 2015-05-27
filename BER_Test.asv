@@ -9,7 +9,6 @@ times = [];
 memories = [];
 EbNos = [];
 cod_can = [];
-warning ('off','all');
 for ciclos = 1:1
     BER_vector = [];
     for EbNo=0:10
@@ -109,6 +108,10 @@ for ciclos = 1:1
             end       
             if (y_decod~=cur_bit(1))
                 err_found = err_found + 1; 
+                if (err_found)>99
+                    disp('Se encontraron mas de 100 errores');
+                    break;
+                end
             end
             EbNo
             porc = bit_now*100/i_bits

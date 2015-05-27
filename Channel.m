@@ -110,7 +110,8 @@ function Next_But_Callback(hObject, eventdata, handles)
 % hObject    handle to Next_But (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-MyUI = gcf;
+global s_rec
+assignin('base','s_rec',s_rec);
 set(gcf,'Visible','off')
 Reception;
 
@@ -295,7 +296,7 @@ switch(get(handles.menu_axes2,'Value'))
         plot(f,S_REC)
         xlabel('Frequency [Hz]')
         ylabel('Magnitude')
-        xlim([-(f1+Rb) f2+Rb])
+        xlim([-(f2+2*Rb) f2+2*Rb])
 end
 set(gca,'Color',[0 0 0]);
 set(gca,'Xcolor',[1 1 1]);
@@ -385,7 +386,7 @@ function menu_axes2_Callback(hObject, eventdata, handles)
 
 % Hints: contents = cellstr(get(hObject,'String')) returns menu_axes2 contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from menu_axes2
-global t2 s_rec f S_REC delta s_bits Tb 
+global t2 s_rec f S_REC delta s_bits Tb f1 Rb f2
 axes(handles.axes_s_rec)
 switch(get(handles.menu_axes2,'Value'))
     case 1
@@ -400,6 +401,7 @@ switch(get(handles.menu_axes2,'Value'))
         plot(f,S_REC)
         xlabel('Frequency [Hz]')
         ylabel('Magnitude')
+        xlim([-(f2+2*Rb) f2+2*Rb])
         set(handles.pos_lbl,'Visible','off');
         set(handles.slid_pos,'Visible','off');
         set(handles.full_win,'Visible','off');

@@ -107,11 +107,3 @@ t2 = linspace(delta,t_bits*Tb,length(s_FSK));
 comp = xor(y_decod,vector);
 errors = sum(comp);
 BER = errors/i_bits;
-%% GRAFICAS
-figure(6)
-plot(t2,s_FSK)
-set(gca,'xtick',0:Tb:t2(length(t2)))
-grid on
-xlim([delta (iter-1)*Tb]);
-hold on
-plot(t2,s_rec,'r')

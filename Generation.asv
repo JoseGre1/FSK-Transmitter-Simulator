@@ -205,7 +205,7 @@ hold on
 plot(t1,y,'r')
 hold off
 set(gca,'ylim',[-0.1*A 1.1*A])
-set(gca,'xtick',0:Tb:t1(length(t1)))
+set(gca,'xtick',Tb:Tb:t1(length(t1)))
 set(gca,'ytick',[0 A])
 ylabel('Amplitude[V]')
 xlabel('Time[s]')
@@ -262,18 +262,16 @@ function Next_But_Callback(hObject, eventdata, handles)
 % hObject    handle to Next_But (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global s_FSK t2 delta s_bits vector f1 f2 t_bits check_encoder mpb
+global s_FSK t2 delta s_bits vector f1 f2 t_bits 
 MyUI = gcf; 
-check_encoder = get(handles.codif_check,'Value');
+get(handle
 assignin('base','s_FSK',s_FSK);
-assignin('base','check_encoder',check_encoder);
-assignin('base','delta',delta);de
+assignin('base','delta',delta);
 assignin('base','t2',t2);
 assignin('base','s_bits',s_bits);
 assignin('base','vector',vector);
 assignin('base','f1',f1);
 assignin('base','f2',f2);
-assignin('base','mpb',mpb);
 assignin('base','t_bits',t_bits);
 set(gcf,'Visible','off')
 Channel;

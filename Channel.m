@@ -23,7 +23,7 @@ function varargout = Channel(varargin)
 
 % Edit the above text to modify the response to help Channel
 
-% Last Modified by GUIDE v2.5 26-May-2015 17:54:17
+% Last Modified by GUIDE v2.5 27-May-2015 11:23:08
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -517,3 +517,16 @@ function slid_pos_CreateFcn(hObject, eventdata, handles)
 if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor',[.9 .9 .9]);
 end
+
+
+% --- Executes when user attempts to close figure1.
+function figure1_CloseRequestFcn(hObject, eventdata, handles)
+% hObject    handle to figure1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: delete(hObject) closes the figure
+close('all','hidden')
+delete(hObject);
+clear all
+clc

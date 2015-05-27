@@ -22,7 +22,7 @@ function varargout = Reception(varargin)
 
 % Edit the above text to modify the response to help Reception
 
-% Last Modified by GUIDE v2.5 27-May-2015 03:20:16
+% Last Modified by GUIDE v2.5 27-May-2015 11:23:04
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -389,6 +389,7 @@ global x1 x2
 eyediagram(x1-x2,2,3,0,'r');
 xlabel('Time [s]')
 ylabel('Amplitude [V]')
+title('Eye Diagram','Color',[1 1 1])
 grid on
 set(gca,'Color',[0 0 0]);
 set(gca,'Xcolor',[1 1 1]);
@@ -402,7 +403,8 @@ function menu_const_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global x1 x2
-figure(2)
+figH3 = figure(3);
+set(figH3,'Name','Constellation','NumberTitle','on')
 scatter(x1,x2)
 hold on
 plot(linspace(-1,2,length(x1)),linspace(-1,2,length(x1)),'--','Color',[0 1 0])
@@ -411,7 +413,7 @@ xlabel('Phi 1(t)')
 ylabel('Phi 2(t)')
 xlim([-1 2])
 ylim([-1 2])
-title('Constellation')
+title('Constellation','Color',[1 1 1])
 grid on
 set(gca,'Color',[0 0 0]);
 set(gca,'Xcolor',[1 1 1]);
@@ -424,6 +426,26 @@ function menu_BER_Callback(hObject, eventdata, handles)
 % hObject    handle to menu_BER (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+load('Results_BER (0-10 sin)3.mat')
+BER_vector2 = BER_vector;
+load('Results_BER (11-12 sin)3.mat')
+BER_vector = [BER_vector2 BER_vector];
+EbNos = 0:15;
+prob_ideal = (0.5)*erfc((1/sqrt(2))*sqrt(10.^(EbNos*0.1)));
+figH4 = figure(4);
+set(figH4,'Name','BER vs. Eb/No','NumberTitle','on')
+semilogy(EbNos,BER_vector,'g')
+hold on 
+semilogy(EbNos,prob_ideal,'r')
+title('BER vs. Eb/No','Color',[1 1 1])
+xlabel('Eb/No [dB]')
+ylabel('Bit error pobability (BER)')
+legend('FSK system BER','FSK ideal BER')
+grid on
+set(gca,'Color',[0 0 0]);
+set(gca,'Xcolor',[1 1 1]);
+set(gca,'Ycolor',[1 1 1]);
+set(gcf,'Color',[0 0 0]);
 
 
 % --- Executes on selection change in pop_spectrum2.
@@ -488,7 +510,7 @@ function Rec_But_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global t_bits t2 delta Tb f1 f2 x1 x2 s_rec check_encoder mpb vector
-global y_decod s_bits errors RxVec TxVec deltab RX_f n_bits fb TX_f
+global y_decod s_bits errors RxVec TxVec deltab RX_f n_bits fb TX_f t1
 %RECEPTOR
 iter = 1;
 i= 1;
@@ -607,3 +629,16 @@ function menu_BER2_Callback(hObject, eventdata, handles)
 % hObject    handle to menu_BER2 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes when user attempts to close figure1.
+function figure1_CloseRequestFcn(hObject, eventdata, handles)
+% hObject    handle to figure1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: delete(hObject) closes the figure
+close('all','hidden')
+delete(hObject);
+clear all
+clc

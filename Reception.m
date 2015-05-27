@@ -22,7 +22,7 @@ function varargout = Reception(varargin)
 
 % Edit the above text to modify the response to help Reception
 
-% Last Modified by GUIDE v2.5 26-May-2015 08:22:52
+% Last Modified by GUIDE v2.5 26-May-2015 22:08:18
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -66,6 +66,7 @@ Tb = 1/Rb; %[s]
 mpb = 8;   %Muestras por bit
 state = 0;
 deltab = 1/(mpb*(1/Tb));
+set(handles.pop_spectrum,'Enable','off');
 warning ('off','all');
 
 
@@ -109,9 +110,9 @@ function Start_But_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global Rb Tb deltab
-global A s_bits n_bits i_bits t_bits Eb
-global vector y e_vector t1 deltaf f1 f2 s_FSK S_FSK f delta
-global stop_val mpb state
+global A s_bits n_bits t_bits Eb
+global vector y e_vector t1 t2 deltaf f1 f2 s_FSK S_FSK f delta
+global stop_val mpb state fb Y
 %--------------------------Reset
 axes(handles.axes_source)
 cla;
@@ -119,6 +120,7 @@ set(handles.Start_But,'Enable','off')
 set(handles.Stop_But,'Enable','on');
 set(handles.position_slider,'Enable','off');
 set(handles.position_slider,'Value',0);
+set(handles.pop_spectrum,'Enable','on');
 n_bits = str2num(get(handles.red_bits,'String'));
 %--------------------------Get values from the GUI
 s_bits = str2num(get(handles.show_bits,'String')); %show bits
@@ -129,7 +131,7 @@ if get(handles.codif_check,'Value')
 end
 t_bits = length(e_vector);
 %--------------------------Codificación de línea
-Eb = 1;
+Eb = 1; %Energia unitaria
 A = sqrt(Eb);  
 [t1,y] = EncoderUNRZ(A,Tb,e_vector,mpb);
 %--------------------------Modulador FSK
@@ -169,17 +171,25 @@ f = -(-1/(2*delta):1/(delta*NFFT):(1/(2*delta)-1/(delta*NFFT)));
 S_FSK = abs(fft(s_FSK,NFFT)/length(t2));
 S_FSK = fftshift(S_FSK);
 S_FSK = S_FSK*Nsamp;
-%----------EN PSD
-% [S_FSK, f] = pwelch(s_FSK,[],[],[],'twosided',mpb);
-% f = (f-mpb/2)*Rb; f = -f; f=f(end:-1:1);
-% S_FSK = fftshift(S_FSK)*0.7/max(S_FSK);
-% S_FSK = circshift(S_FSK,-1);
-plot(f,S_FSK) %NORMALIZADA QUITAR EL 2*Eb para sacar la grafica normal
-xlim([-(f1+deltaf+Rb) f1+deltaf+Rb])
+%--------------------------Espectro de la entrada del sistema
+%----------EN FFT
+plot(t1,y,'r')
+NFFT = length(t1);
+Nsamp = (length(t1)*deltab);
+fb = -(-1/(2*deltab):1/(deltab*NFFT):(1/(2*deltab)-1/(deltab*NFFT)));
+Y = abs(fft(y,NFFT)/length(t2));
+Y = fftshift(Y);
+Y = Y*Nsamp;
 %--------------------------Visualizacion
 axes(handles.axes_SFSK)
-plot(f,S_FSK,'Color',[1 1 0])
-ylabel('Power[V^2/Hz]')
+switch(get(handles.pop_spectrum,'Value'))
+    case 1
+        plot(f,S_FSK,'Color',[1 1 0])
+        xlim([-(f1+deltaf+Rb) f1+deltaf+Rb])
+    case 2
+        plot(fb,Y,'Color',[1 1 0])
+end
+ylabel('Magnitude')
 xlabel('Frequency[Hz]')
 grid on
 set(gca,'Color',[0 0 0]);
@@ -248,20 +258,18 @@ function Next_But_Callback(hObject, eventdata, handles)
 % hObject    handle to Next_But (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% global Rb Tb delta
-% global A s_bits n_bits
-% global vector y e_vector t1 deltaf f1 s_FSK S_FSK f
-% global stop_val mpb state
-% assignin('base','Rb',Rb);
-% assignin('base','Tb',Tb);
-% assignin('base','delta',delta);
-% assignin('base','A',A);
-% assignin('base','s_bits',s_bits);
-% assignin('base','n_bits',n_bits);
-% assignin('base','vector',vector);
+global s_FSK t2 delta s_bits vector f1 f2
 MyUI = gcf;
+assignin('base','s_FSK',s_FSK);
+assignin('base','delta',delta);
+assignin('base','t2',t2);
+assignin('base','s_bits',s_bits);
+assignin('base','vector',vector);
+assignin('base','f1',f1);
+assignin('base','f2',f2);
 set(gcf,'Visible','off')
 Channel;
+
 
 
 function nbits_Callback(hObject, eventdata, handles)
@@ -417,6 +425,7 @@ else
     set(handles.red_label,'Visible','off');
     set(handles.red_bits,'Visible','off');
 end
+
 function red_bits_Callback(hObject, eventdata, handles)
 % hObject    handle to red_bits (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -451,3 +460,98 @@ function pushbutton8_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton8 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on selection change in pop_spectrum.
+function pop_spectrum_Callback(hObject, eventdata, handles)
+% hObject    handle to pop_spectrum (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns pop_spectrum contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from pop_spectrum
+global f S_FSK fb Y f1 Rb deltaf
+axes(handles.axes_SFSK)
+switch(get(handles.pop_spectrum,'Value'))
+    case 1
+        plot(f,S_FSK,'Color',[1 1 0])
+        xlim([-(f1+deltaf+Rb) f1+deltaf+Rb])
+    case 2
+        plot(fb,Y,'Color',[1 1 0])
+end
+ylabel('Magnitude')
+xlabel('Frequency[Hz]')
+grid on
+set(gca,'Color',[0 0 0]);
+set(gca,'Xcolor',[1 1 1]);
+set(gca,'Ycolor',[1 1 1]);
+
+% --- Executes during object creation, after setting all properties.
+function pop_spectrum_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to pop_spectrum (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in Back_but.
+function Back_but_Callback(hObject, eventdata, handles)
+% hObject    handle to Back_but (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --------------------------------------------------------------------
+function Menu_analysis_Callback(hObject, eventdata, handles)
+% hObject    handle to Menu_analysis (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --------------------------------------------------------------------
+function eye_menu_Callback(hObject, eventdata, handles)
+% hObject    handle to eye_menu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --------------------------------------------------------------------
+function menu_const_Callback(hObject, eventdata, handles)
+% hObject    handle to menu_const (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --------------------------------------------------------------------
+function menu_BER_Callback(hObject, eventdata, handles)
+% hObject    handle to menu_BER (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on selection change in pop_spectrum2.
+function pop_spectrum2_Callback(hObject, eventdata, handles)
+% hObject    handle to pop_spectrum2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns pop_spectrum2 contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from pop_spectrum2
+
+
+% --- Executes during object creation, after setting all properties.
+function pop_spectrum2_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to pop_spectrum2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

@@ -112,8 +112,7 @@ function Next_But_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 MyUI = gcf;
 set(gcf,'Visible','off')
-Channel;
-
+Reception;
 
 function ebno_Callback(hObject, eventdata, handles)
 % hObject    handle to ebno (see GCBO)

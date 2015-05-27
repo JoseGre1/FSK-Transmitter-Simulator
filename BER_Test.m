@@ -11,7 +11,7 @@ EbNos = [];
 cod_can = [];
 for ciclos = 1:1
     BER_vector = [];
-    for EbNo=1:15
+    for EbNo=1:12
         i_bits = round(1/(0.5*erfc(sqrt(0.5*10^(EbNo*0.1))))); %Bits de informacion
         err_found = 0;
         for bit_now = 1:i_bits
@@ -121,7 +121,7 @@ for ciclos = 1:1
         EbNos = [EbNos EbNo];
         cod_can = [cod_can check_encoder];
         times = [times toc];
-        save('Results_BER')
+        save('Results_BER (1-12 sin)2')
     end
     check_encoder = 1; 
 end

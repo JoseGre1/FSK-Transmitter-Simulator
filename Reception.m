@@ -60,7 +60,7 @@ guidata(hObject, handles);
 
 % UIWAIT makes Reception wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
-global Rb Tb deltab state mpb check_encoder vector
+global Rb Tb deltab state mpb check_encoder vector Eb
 global t2 delta f1 f2
 global s_bits i_bits
 delta = evalin('base','delta');
@@ -69,6 +69,7 @@ s_bits = evalin('base','s_bits');
 i_bits = evalin('base','i_bits');
 f1 = evalin('base','f1');
 f2 = evalin('base','f2');
+Eb = evalin('base','Eb');
 check_encoder = evalin('base','check_encoder');
 vector = evalin('base','vector');
 Rb = 2400; %[bps]
@@ -402,12 +403,16 @@ function menu_const_Callback(hObject, eventdata, handles)
 % hObject    handle to menu_const (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global x1 x2
+global x1 x2 Eb
 figH3 = figure(3);
 set(figH3,'Name','Constellation','NumberTitle','on')
 scatter(x1,x2)
 hold on
 plot(linspace(-1,2,length(x1)),linspace(-1,2,length(x1)),'--','Color',[0 1 0])
+hold on
+plot(sqrt(Eb),0,'go','linewidth',6,'Color',[1 0 0]);
+hold on
+plot(0,sqrt(Eb),'go','linewidth',6,'Color',[1 0 0]);
 hold off
 xlabel('Phi 1(t)')
 ylabel('Phi 2(t)')
@@ -633,7 +638,30 @@ function menu_BER2_Callback(hObject, eventdata, handles)
 % hObject    handle to menu_BER2 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+load('Results_BER (0-10 sin)3.mat')
+BER_vector2 = BER_vector;
+load('Results_BER (11-12 sin)3.mat')
+BER_vector = [BER_vector2 BER_vector];
+BER_vector2 = BER_vector;
+load('Results_BER (13-15 sin)3.mat')
+BER_vector2(14:16) = BER_vector;
+load('Results_BER (0-7 con)3.mat')
+BER_vector_cod = BER_vector; 
+figH4 = figure(4);
+EbNos = 0:7;
+set(figH4,'Name','BER vs. Eb/No','NumberTitle','on')
+semilogy(EbNos,BER_vector2(1:8),'g')
+hold on 
+semilogy(EbNos,BER_vector_cod,'r')
+title('BER vs. Eb/No','Color',[1 1 1])
+xlabel('Eb/No [dB]')
+ylabel('Bit error pobability (BER)')
+legend('FSK system BER w/o CH-encoding','FSK system BER w/ CH-encoding')
+grid on
+set(gca,'Color',[0 0 0]);
+set(gca,'Xcolor',[1 1 1]);
+set(gca,'Ycolor',[1 1 1]);
+set(gcf,'Color',[0 0 0]);
 
 % --- Executes when user attempts to close figure1.
 function figure1_CloseRequestFcn(hObject, eventdata, handles)

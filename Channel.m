@@ -267,7 +267,7 @@ switch(get(handles.menu_axes1,'Value'))
         ylabel('Magnitude')
         grid on;
     case 2
-        plot(f,S_REC);
+        plot(w/pi*(1/delta)/2,p);
         xlabel('Frequency [Hz]')
         ylabel('Phase [rad]')
         grid on;

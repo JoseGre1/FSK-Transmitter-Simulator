@@ -434,7 +434,7 @@ function pop_spectrum2_Callback(hObject, eventdata, handles)
 
 % Hints: contents = cellstr(get(hObject,'String')) returns pop_spectrum2 contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from pop_spectrum2
-global t1 fb Y TxVec s_bits Tb
+global t1 fb TxVec s_bits Tb TX_f
 Eb = 1;
 A = sqrt(Eb);
 axes(handles.axes_orig)
@@ -446,14 +446,12 @@ switch(get(handles.pop_spectrum2,'Value'))
         hold off
         ylabel('Amplitude[V]')
         xlabel('Time[s]')
-        grid on
         xlim([0 s_bits*Tb]);
         set(gca,'ylim',[-0.1*A 1.1*A])
         set(gca,'xtick',Tb:Tb:t1(length(t1)))
         set(gca,'ytick',[0 A])
-        set(handles.position_slider,'Enable','on');
     case 2
-        plot(fb,Y,'Color',[1 1 0])
+        plot(fb,TX_f,'Color',[1 1 0])
         ylabel('Magnitude')
         xlabel('Frequency[Hz]')
 end
@@ -566,7 +564,9 @@ switch (get(handles.pop_spectrum,'Value'))
         xlabel('Time[s]')
         xlim([0 s_bits*Tb]);
     case 2
-        
+        plot(fb,RX_f,'Color',[1 1 0])
+        ylabel('Magnitude')
+        xlabel('Frequency[Hz]')
 end;
 grid on
 set(gca,'Color',[0 0 0]);
@@ -574,20 +574,27 @@ set(gca,'Xcolor',[1 1 1]);
 set(gca,'Ycolor',[1 1 1]);
 
 axes(handles.axes_orig)
-plot(t1,TxVec,'o')
-hold on
-plot(t1,TxVec,'r')
-hold off
-set(gca,'ylim',[-0.1*A 1.1*A])
-set(gca,'xtick',Tb:Tb:t1(length(t1)))
-set(gca,'ytick',[0 A])
-ylabel('Amplitude[V]')
-xlabel('Time[s]')
-grid on
-xlim([0 s_bits*Tb]);
+switch (get(handles.pop_spectrum2,'Value'))
+    case 1
+        plot(t1,TxVec,'o')
+        hold on
+        plot(t1,TxVec,'r')
+        hold off
+        set(gca,'ylim',[-0.1*A 1.1*A])
+        set(gca,'xtick',Tb:Tb:t1(length(t1)))
+        set(gca,'ytick',[0 A])
+        ylabel('Amplitude[V]')
+        xlabel('Time[s]')
+        xlim([0 s_bits*Tb]);
+    case 2
+        plot(fb,TX_f,'Color',[1 1 0])
+        ylabel('Magnitude')
+        xlabel('Frequency[Hz]')
+end;
 set(gca,'Color',[0 0 0]);
 set(gca,'Xcolor',[1 1 1]);
 set(gca,'Ycolor',[1 1 1]);
+grid on
 
 set(handles.position_slider,'Enable','on');
 set(handles.pop_spectrum,'Enable','on');

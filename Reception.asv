@@ -553,18 +553,24 @@ TX_f = fftshift(TX_f);
 TX_f = TX_f*Nsamp;
 %----------GRAFICAS
 axes(handles.axes_rec)
-switch (get(handles.pop_spectrum,'Value')
-plot(t1,RxVec,'o')
-hold on
-plot(t1,RxVec,'r')
-hold off
-set(gca,'ylim',[-0.1*A 1.1*A])
-set(gca,'xtick',Tb:Tb:t1(length(t1)))
-set(gca,'ytick',[0 A])
-ylabel('Amplitude[V]')
-xlabel('Time[s]')
+switch (get(handles.pop_spectrum,'Value'))
+    case 1
+        plot(t1,RxVec,'o')
+        hold on
+        plot(t1,RxVec,'r')
+        hold off
+        set(gca,'ylim',[-0.1*A 1.1*A])
+        set(gca,'xtick',Tb:Tb:t1(length(t1)))
+        set(gca,'ytick',[0 A])
+        ylabel('Amplitude[V]')
+        xlabel('Time[s]')
+        xlim([0 s_bits*Tb]);
+    case 2
+        plot(fb,RX_D,'Color',[1 1 0])
+        ylabel('Magnitude')
+        xlabel('Frequency[Hz]')
+end;
 grid on
-xlim([0 s_bits*Tb]);
 set(gca,'Color',[0 0 0]);
 set(gca,'Xcolor',[1 1 1]);
 set(gca,'Ycolor',[1 1 1]);
